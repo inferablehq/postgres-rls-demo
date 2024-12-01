@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_USER=${POSTGRES_USER:-admin}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-admin}
+      - DB_HOST=db
+      - DB_NAME=${POSTGRES_DB:-my_db}
+      - DB_PORT=5432
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5532:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-admin}
+      - POSTGRES_DB=${POSTGRES_DB:-my_db}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-my_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
